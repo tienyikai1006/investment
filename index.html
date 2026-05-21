@@ -295,7 +295,7 @@
 
 /* 鎖頭極簡登入畫面：駭客金融風 */
 body.auth-locked{overflow:hidden}
-body.auth-locked .dashboard{filter:blur(10px) brightness(.45) saturate(.75);pointer-events:none;user-select:none}
+body.auth-locked .dashboard{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;user-select:none!important}
 .auth-gate{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% 50%,rgba(30,255,180,.08),transparent 24%),radial-gradient(circle at 50% 10%,rgba(64,220,255,.07),transparent 20%),linear-gradient(180deg,#040807 0%,#050b0c 48%,#030707 100%);overflow:hidden}
 .auth-gate.hidden{display:none!important}
 .auth-gate::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(18,255,182,.05) 1px, transparent 1px),linear-gradient(90deg, rgba(18,255,182,.05) 1px, transparent 1px);background-size:48px 48px;opacity:.22;transform:perspective(900px) rotateX(76deg) scale(1.45) translateY(18%);transform-origin:center bottom;pointer-events:none}
@@ -325,6 +325,14 @@ body.auth-locked .dashboard{filter:blur(10px) brightness(.45) saturate(.75);poin
 .auth-lock-status .cloud-status{min-width:0;text-align:center;color:#7fe2c5;font-size:0;line-height:0}
 .auth-lock-status .cloud-status strong,.auth-lock-status .cloud-status span{font-size:0;line-height:0;color:transparent}
 .auth-lock-status .cloud-status.ok::before,.auth-lock-status .cloud-status.warn::before,.auth-lock-status .cloud-status.err::before{font-size:0}
+.auth-lock-status{bottom:-86px;width:280px}
+.auth-lock-status .cloud-status{min-width:220px;text-align:center;color:#7fe2c5;font-size:13px!important;line-height:1.55!important}
+.auth-lock-status .cloud-status strong{display:block;color:#d8fff3!important;font-size:15px!important;line-height:1.4!important;margin-bottom:4px}
+.auth-lock-status .cloud-status span{display:block;color:#7fe2c5!important;font-size:12px!important;line-height:1.5!important}
+.auth-lock-status .cloud-status.ok strong{color:#39d98a!important}
+.auth-lock-status .cloud-status.warn strong{color:#f9c74f!important}
+.auth-lock-status .cloud-status.err strong{color:#ff5c6c!important}
+.auth-lock-status .cloud-status.warn::before{content:"Click the lock to sign in";display:block;color:#d8fff3;font-size:13px;line-height:1.5;margin-bottom:2px}
 .auth-hidden-logout{display:none!important}
 @keyframes lockPulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.24);opacity:0}}
 @media(max-width:760px){.auth-lock-btn{width:124px;height:124px;border-radius:32px}.auth-lock-btn::before{border-radius:24px}.auth-lock-btn::after{border-radius:40px}.auth-lock-status{bottom:-28px;width:180px}}
@@ -475,11 +483,11 @@ body.auth-locked .dashboard{filter:blur(10px) brightness(.45) saturate(.75);poin
     </button>
     <button class="auth-hidden-logout hidden" type="button" id="gateGoogleLogoutBtn" aria-label="登出"></button>
     <div class="auth-lock-status">
-      <div class="cloud-status warn" id="gateStatus"><strong>尚未登入</strong><span>請先使用 Google 登入。</span></div>
+      <div class="cloud-status warn" id="gateStatus"><strong>尚未登入</strong><span>點中間鎖頭，用 Google 登入。</span></div>
     </div>
   </div>
 </div>
-<div class="dashboard"><div class="shell">
+<div class="dashboard" id="dashboardRoot" hidden aria-hidden="true"><div class="shell">
   <aside class="sidebar">
     <div class="brand"><button class="logo" type="button" id="avatarButton"><span>Y</span><img id="avatarPreview" alt="avatar" /></button><input id="avatarInput" type="file" accept="image/*" style="display:none"/><div><h1>YiKai Assets</h1><p>個人資產主頁</p></div></div>
     <div class="asset-menu">
@@ -1469,70 +1477,6 @@ Object.assign(window,{showAssetDetail,showAssetOverviewPage,showResearchPage,sho
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{renderAfterDataChange?.();refreshBankOfTaiwanRates();},{once:true});
   else {try{renderAfterDataChange?.();}catch(e){} refreshBankOfTaiwanRates();}
 
-  const INVESTMENT_RESET_VERSION = "2026-05-14-empty-investment-v1";
-  const clearInvestmentStateForRekey = () => {
-    if (assetDetails?.investment) assetDetails.investment.rows = [];
-    usPositions = [];
-    realizedTrades = [];
-    selectedPositionSymbol = "";
-  };
-  const clearIncomingInvestmentData = (data) => {
-    const next = JSON.parse(JSON.stringify(data || {}));
-    if (!next.assetDetails) next.assetDetails = {};
-    if (!next.assetDetails.investment) {
-      next.assetDetails.investment = {
-        title: "\u6295\u8cc7\u660e\u7d30",
-        desc: "\u6295\u8cc7\u5206\u985e\u62c6\u6210\u53f0\u80a1\u3001\u7f8e\u80a1\u8207\u52a0\u5bc6\u8ca8\u5e63\u3002",
-        tag: "Investment",
-        rows: []
-      };
-    } else {
-      next.assetDetails.investment.rows = [];
-    }
-    next.usPositions = [];
-    next.realizedTrades = [];
-    next.selectedPositionSymbol = "";
-    next.investmentResetVersion = INVESTMENT_RESET_VERSION;
-    return next;
-  };
-  const refreshClearedInvestmentUi = () => {
-    const miniBox = document.querySelector('.menu-card[data-asset-type="investment"] .mini-box');
-    if (miniBox) {
-      miniBox.innerHTML = '<div class="mini-row"><span>&#25237;&#36039;&#36039;&#26009;</span><strong>&#23578;&#26410;&#36664;&#20837;</strong></div>';
-    }
-    const summaryBody = document.querySelector('.lower-grid[data-general-section] .asset-table-wrap tbody');
-    if (summaryBody) {
-      summaryBody.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;padding:24px">&#30446;&#21069;&#23578;&#26410;&#36664;&#20837;&#25237;&#36039;&#36039;&#26009;&#12290;</td></tr>';
-    }
-    const watchlist = document.querySelector('.lower-grid[data-general-section] .watchlist');
-    if (watchlist) {
-      watchlist.innerHTML = '<div class="watch-card"><div class="watch-top"><span class="ticker">&#25237;&#36039;&#35264;&#23519;</span><span class="muted">&#31354;&#30333;</span></div><div class="watch-price">&#23578;&#26410;&#36664;&#20837;</div><div class="watch-sub">&#26032;&#22686;&#20489;&#20301;&#24460;&#21487;&#37325;&#26032;&#36861;&#36452;</div></div>';
-    }
-  };
-  const originalCollectFinanceDataForReset = window.collectFinanceData || collectFinanceData;
-  window.collectFinanceData = collectFinanceData = function() {
-    return { ...originalCollectFinanceDataForReset(), investmentResetVersion: INVESTMENT_RESET_VERSION };
-  };
-  const originalApplyFinanceDataForReset = window.applyFinanceData || applyFinanceData;
-  window.applyFinanceData = applyFinanceData = function(data, options = {}) {
-    const shouldReset = data?.investmentResetVersion !== INVESTMENT_RESET_VERSION;
-    const result = originalApplyFinanceDataForReset(shouldReset ? clearIncomingInvestmentData(data) : data, options);
-    if (shouldReset) {
-      setTimeout(() => {
-        refreshClearedInvestmentUi();
-      }, 0);
-    }
-    return result;
-  };
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!localStorage.getItem(FINANCE_STORAGE_KEY)) {
-      clearInvestmentStateForRekey();
-      localStorage.setItem(FINANCE_STORAGE_KEY, JSON.stringify(window.collectFinanceData()));
-      renderAfterDataChange?.();
-    }
-    refreshClearedInvestmentUi();
-  });
-
   Object.assign(window,{refreshBankOfTaiwanRates,formatMoneyByCurrency,rowAmountTwd,fxRateToTwd,currencyPrefix});
 })();
 
@@ -2407,6 +2351,164 @@ Object.assign(window,{showAssetDetail,showAssetOverviewPage,showResearchPage,sho
   }, true);
 })();
 </script>
+<script>
+(() => {
+  const ZERO_DEFAULT_VERSION = "2026-05-21-zero-defaults-v1";
+  const STORAGE_KEY = "yikaiFinanceDashboardData_v2";
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+
+  function zeroOutDashboardData() {
+    if (typeof assetDetails === "undefined") return;
+
+    Object.values(assetDetails).forEach((group) => {
+      (group.rows || []).forEach((row) => {
+        row.amount = 0;
+        row.monthlyChange = 0;
+        row.currency = row.currency || "TWD";
+
+        if (Array.isArray(row.children)) {
+          row.children.forEach((child) => {
+            child.amount = 0;
+          });
+        }
+
+        if ("installmentTotal" in row) row.installmentTotal = 0;
+        if ("installmentMonths" in row) row.installmentMonths = 0;
+        if ("remainingInstallments" in row) row.remainingInstallments = 0;
+        if ("monthlyPayment" in row) row.monthlyPayment = 0;
+      });
+    });
+
+    if (typeof usPositions !== "undefined") usPositions = [];
+    if (typeof realizedTrades !== "undefined") realizedTrades = [];
+    if (typeof selectedPositionSymbol !== "undefined") selectedPositionSymbol = "";
+  }
+
+  function isLikelyOldDemoData(details) {
+    if (!details || typeof details !== "object") return false;
+    const amount = (type, index) => Number(details?.[type]?.rows?.[index]?.amount || 0);
+    const demoChecks = [
+      amount("cash", 0) === 280000,
+      amount("cash", 1) === 118000,
+      amount("cash", 2) === 30000,
+      amount("fixed", 0) === 120000,
+      amount("fixed", 1) === 150000,
+      amount("fixed", 2) === 50000,
+      amount("debt", 0) === 62000,
+      amount("debt", 1) === 18000,
+      amount("debt", 2) === 6000,
+    ];
+    return demoChecks.filter(Boolean).length >= 7;
+  }
+
+  function collectCleanFinanceData() {
+    return {
+      version: 3,
+      zeroDefaultVersion: ZERO_DEFAULT_VERSION,
+      updatedAt: new Date().toISOString(),
+      assetDetails: typeof assetDetails !== "undefined" ? clone(assetDetails) : {},
+      usPositions: typeof usPositions !== "undefined" ? clone(usPositions) : [],
+      realizedTrades: typeof realizedTrades !== "undefined" ? clone(realizedTrades) : [],
+      stockQuotesList:
+        typeof stockQuotes !== "undefined"
+          ? Object.values(stockQuotes).map((quote) => clone(quote))
+          : [],
+      selectedPositionSymbol: typeof selectedPositionSymbol !== "undefined" ? selectedPositionSymbol : "",
+      currentAddMarket: typeof currentAddMarket !== "undefined" ? currentAddMarket : "us",
+    };
+  }
+
+  function normalizeIncomingData(data) {
+    const next = data && typeof data === "object" ? clone(data) : {};
+
+    if (!next.zeroDefaultVersion && isLikelyOldDemoData(next.assetDetails)) {
+      zeroOutDashboardData();
+      next.assetDetails = typeof assetDetails !== "undefined" ? clone(assetDetails) : {};
+      next.usPositions = [];
+      next.realizedTrades = [];
+      next.selectedPositionSymbol = "";
+    }
+
+    if (!next.assetDetails || typeof next.assetDetails !== "object") {
+      zeroOutDashboardData();
+      next.assetDetails = typeof assetDetails !== "undefined" ? clone(assetDetails) : {};
+    }
+
+    next.usPositions = Array.isArray(next.usPositions) ? next.usPositions : [];
+    next.realizedTrades = Array.isArray(next.realizedTrades) ? next.realizedTrades : [];
+    next.selectedPositionSymbol = next.selectedPositionSymbol || "";
+    next.currentAddMarket = next.currentAddMarket || "us";
+    next.zeroDefaultVersion = ZERO_DEFAULT_VERSION;
+
+    return next;
+  }
+
+  function applyCleanFinanceData(data, options = {}) {
+    const incoming = normalizeIncomingData(data);
+
+    try {
+      if (typeof isApplyingFinanceData !== "undefined") isApplyingFinanceData = true;
+
+      if (typeof assetDetails !== "undefined" && incoming.assetDetails) {
+        Object.keys(assetDetails).forEach((key) => delete assetDetails[key]);
+        Object.assign(assetDetails, incoming.assetDetails);
+      }
+
+      if (typeof usPositions !== "undefined") usPositions = incoming.usPositions;
+      if (typeof realizedTrades !== "undefined") realizedTrades = incoming.realizedTrades;
+      if (typeof selectedPositionSymbol !== "undefined") selectedPositionSymbol = incoming.selectedPositionSymbol;
+      if (typeof currentAddMarket !== "undefined") currentAddMarket = incoming.currentAddMarket;
+
+      if (typeof stockQuotes !== "undefined") {
+        const list = Array.isArray(incoming.stockQuotesList)
+          ? incoming.stockQuotesList
+          : Object.values(incoming.stockQuotes || {});
+
+        list.forEach((quote) => {
+          if (quote && quote.symbol) stockQuotes[quote.symbol] = quote;
+        });
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectCleanFinanceData()));
+
+      if (typeof renderAfterDataChange === "function") renderAfterDataChange();
+      if (typeof window.syncInvestmentFinal === "function") window.syncInvestmentFinal();
+
+      if (options.fromCloud && typeof setCloudSyncStatus === "function") {
+        setCloudSyncStatus("Cloud synced", "Firebase data loaded", "ok");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Apply data failed", error);
+      if (typeof setCloudSyncStatus === "function") {
+        setCloudSyncStatus("Apply data failed", error.message || "Please refresh", "err");
+      }
+      return false;
+    } finally {
+      if (typeof isApplyingFinanceData !== "undefined") isApplyingFinanceData = false;
+    }
+  }
+
+  window.collectFinanceData = collectFinanceData = collectCleanFinanceData;
+  window.applyFinanceData = applyFinanceData = applyCleanFinanceData;
+  window.zeroOutDashboardData = zeroOutDashboardData;
+
+  let savedDataIsOldDemo = false;
+  try {
+    const savedRaw = localStorage.getItem(STORAGE_KEY);
+    const savedData = savedRaw ? JSON.parse(savedRaw) : null;
+    savedDataIsOldDemo = !!savedData && !savedData.zeroDefaultVersion && isLikelyOldDemoData(savedData.assetDetails);
+  } catch (_) {}
+
+  if (!localStorage.getItem(STORAGE_KEY) || savedDataIsOldDemo) {
+    zeroOutDashboardData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectCleanFinanceData()));
+  }
+
+  if (typeof renderAfterDataChange === "function") renderAfterDataChange();
+})();
+</script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -2451,8 +2553,14 @@ Object.assign(window,{showAssetDetail,showAssetOverviewPage,showResearchPage,sho
   let cloudSaveTimer = null;
 
   const setGateLocked = (locked) => {
+    const dashboardRoot = document.getElementById("dashboardRoot") || document.querySelector(".dashboard");
     document.body.classList.toggle("auth-locked", locked);
     authGate?.classList.toggle("hidden", !locked);
+    if (dashboardRoot) {
+      dashboardRoot.hidden = locked;
+      dashboardRoot.setAttribute("aria-hidden", locked ? "true" : "false");
+      if ("inert" in dashboardRoot) dashboardRoot.inert = locked;
+    }
     if (locked) window.scrollTo({ top: 0, behavior: "auto" });
   };
   const syncButtons = (loggedIn) => {
