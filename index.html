@@ -2687,5 +2687,84 @@ Object.assign(window,{showAssetDetail,showAssetOverviewPage,showResearchPage,sho
     }
   });
 </script>
+<script>
+(() => {
+  const ensureDeleteButtonStyle = () => {
+    if (document.getElementById("positionDeleteFinalStyle")) return;
+    const style = document.createElement("style");
+    style.id = "positionDeleteFinalStyle";
+    style.textContent = `
+      .position-action-group{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+      .delete-position-btn{border:1px solid rgba(255,92,108,.35);background:rgba(255,92,108,.08);color:var(--red);border-radius:12px;padding:8px 10px;cursor:pointer;font-size:12px;font-weight:850}
+      .delete-position-btn:hover{background:rgba(255,92,108,.16)}
+      .pro-table-card table.position-table th:nth-child(8),
+      .pro-table-card table.position-table td:nth-child(8){width:156px}
+    `;
+    document.head.appendChild(style);
+  };
+  window.deleteInvestmentPosition = function(symbol) {
+    const normalized = typeof normalizeSymbol === "function" ? normalizeSymbol(symbol) : String(symbol || "").trim().toUpperCase();
+    const position = (window.usPositions || usPositions || []).find(p => p.symbol === normalized);
+    if (!position) return;
+    if (!confirm(`確定刪除 ${normalized} 這筆持倉嗎？這不會新增賣出紀錄。`)) return;
+    usPositions = (window.usPositions || usPositions || []).filter(p => p.symbol !== normalized);
+    window.usPositions = usPositions;
+    if (selectedPositionSymbol === normalized) selectedPositionSymbol = usPositions[0]?.symbol || "";
+    renderUsPositions?.();
+    renderIndustryMix?.();
+    renderResearchSymbols?.();
+    renderRealizedTrades?.();
+    updateDashboardNumbers?.();
+    if (currentAssetType === "investment") renderSelectedPositionKline?.();
+    window.syncInvestmentFinal?.();
+    saveFinanceData?.();
+  };
+  const addMissingDeleteButtons = () => {
+    ensureDeleteButtonStyle();
+    document.querySelectorAll("#usPositionRows tr").forEach(row => {
+      const symbol = row.querySelector(".position-symbol-text strong")?.textContent?.trim();
+      const cell = row.querySelector("td:last-child");
+      if (!symbol || !cell || cell.querySelector(".delete-position-btn")) return;
+      const sellButton = cell.querySelector(".sell-position-btn");
+      const group = document.createElement("div");
+      group.className = "position-action-group";
+      if (sellButton) group.appendChild(sellButton);
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "delete-position-btn";
+      deleteButton.type = "button";
+      deleteButton.textContent = "刪除";
+      deleteButton.addEventListener("click", event => {
+        event.stopPropagation();
+        window.deleteInvestmentPosition(symbol);
+      });
+      group.appendChild(deleteButton);
+      cell.textContent = "";
+      cell.appendChild(group);
+    });
+  };
+  const patchRender = () => {
+    const oldRender = window.renderUsPositions || (typeof renderUsPositions === "function" ? renderUsPositions : null);
+    if (!oldRender || oldRender.__deletePatchApplied) return;
+    const patched = function(...args) {
+      const result = oldRender.apply(this, args);
+      setTimeout(addMissingDeleteButtons, 0);
+      return result;
+    };
+    patched.__deletePatchApplied = true;
+    window.renderUsPositions = renderUsPositions = patched;
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      patchRender();
+      setTimeout(addMissingDeleteButtons, 300);
+      setTimeout(addMissingDeleteButtons, 1200);
+    });
+  } else {
+    patchRender();
+    setTimeout(addMissingDeleteButtons, 0);
+    setTimeout(addMissingDeleteButtons, 1200);
+  }
+})();
+</script>
 </body>
 </html>
