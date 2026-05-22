@@ -2872,4 +2872,59 @@ Object.assign(window,{showAssetDetail,showAssetOverviewPage,showResearchPage,sho
 })();
 </script>
 <script>
-(() => 
+(() => {
+  const style = document.createElement("style");
+  style.id = "wideInvestmentTableNoScrollbar";
+  style.textContent = `
+    .shell{width:min(100%,1920px)!important}
+    .pro-table-card{overflow:hidden!important}
+    .pro-table-card table.position-table{
+      width:100%!important;
+      min-width:0!important;
+      table-layout:fixed!important;
+    }
+    .pro-table-card table.position-table th,
+    .pro-table-card table.position-table td{
+      padding:15px 12px!important;
+      font-size:13px!important;
+    }
+    .pro-table-card table.position-table th:nth-child(1),
+    .pro-table-card table.position-table td:nth-child(1){width:20%!important}
+    .pro-table-card table.position-table th:nth-child(2),
+    .pro-table-card table.position-table td:nth-child(2){width:8%!important}
+    .pro-table-card table.position-table th:nth-child(3),
+    .pro-table-card table.position-table td:nth-child(3),
+    .pro-table-card table.position-table th:nth-child(4),
+    .pro-table-card table.position-table td:nth-child(4){width:12%!important}
+    .pro-table-card table.position-table th:nth-child(5),
+    .pro-table-card table.position-table td:nth-child(5){width:13%!important}
+    .pro-table-card table.position-table th:nth-child(6),
+    .pro-table-card table.position-table td:nth-child(6){width:13%!important}
+    .pro-table-card table.position-table th:nth-child(7),
+    .pro-table-card table.position-table td:nth-child(7){width:8%!important}
+    .pro-table-card table.position-table th:nth-child(8),
+    .pro-table-card table.position-table td:nth-child(8){width:14%!important}
+    .position-symbol-cell{gap:9px!important}
+    .position-symbol-text .muted{max-width:120px!important}
+    .position-action-group{
+      display:flex!important;
+      justify-content:flex-end!important;
+      align-items:center!important;
+      gap:7px!important;
+      white-space:nowrap!important;
+    }
+    .sell-position-btn,
+    .delete-position-btn{
+      padding:8px 9px!important;
+      min-width:44px!important;
+    }
+    @media(min-width:1281px){
+      .dashboard{padding-left:18px!important;padding-right:18px!important}
+      .shell{grid-template-columns:250px minmax(0,1fr)!important}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+</script>
+</body>
+</html>
